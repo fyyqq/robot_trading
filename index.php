@@ -93,22 +93,6 @@
                 .then(data => {
                     const contract_address = regexPost(data);
                     trojanManagement(contract_address)
-                    
-                    // document.getElementById('query_container').innerHTML = "";
-                    // const emojis = ["🪙", "🔗", "📅"];
-                    // let index = 0;
-
-                    // for (const key in result) {
-                    //     if (result.hasOwnProperty(key)) {
-                    //         const value = result[key];
-                    //         const listItem = document.createElement("p");
-                    //         listItem.classList.add('m-0');
-                    //         listItem.innerHTML = `${emojis[index]} : ${value}`;
-                    //         // document.getElementById('query_container').appendChild(listItem);
-                    //         index += 1;
-                    //     }
-                    // }
-
                 }).catch(err => console.error(err));
             }
 
@@ -123,7 +107,7 @@
                 if ($(pause_btn).hasClass('d-none')) {
                     $(pause_btn).removeClass('d-none');
                     $(element).addClass('d-none');
-                    interval_ID = setInterval(fetchLatestMessage, 2000);
+                    interval_ID = setInterval(fetchLatestMessage, 1000);
                     console.log("Real Time Data: 🟢");
                 }
             }
@@ -134,36 +118,29 @@
                 if ($(play_btn).hasClass('d-none')) {
                     $(play_btn).removeClass('d-none');
                     $(element).addClass('d-none');
+                    console.log("Real Time Data: 🔴");
+
                     if (interval_ID !== null) {
                         clearInterval(interval_ID);
                         interval_ID = null;
                     }
-                    console.log("Real Time Data: 🔴");
                 }
             }
-
-            const checkExistingCA = [];
 
             function trojanManagement(CA) {
                 const contract_address = CA.data;
                 
-                if (!checkExistingCA.includes(contract_address)) {
-                    checkExistingCA.push(contract_address);
-
-                    fetch('http://localhost:8000/trojan.php', {
-                        method: "POST",
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(contract_address),
-                    })
-                    .then(response => response.text())
-                    .then(data => {
-                        console.log(`${data}\n`);
-                    });
-                } else {
-                    console.log("🔴 JS: CA already execute !!");
-                }
+                fetch('http://localhost:8000/trojan.php', {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(contract_address),
+                })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(`${data}\n`);
+                }).catch(err => console.error(err));
             }
 
             window.addEventListener("DOMContentLoaded", fetchLatestMessage);

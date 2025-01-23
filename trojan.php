@@ -29,46 +29,40 @@ $settings->setAppInfo((new AppInfo)
 $MadelineProto = new API('session.madeline', $settings);
 $MadelineProto->start();
 
-// $ca = json_decode(file_get_contents('php://input'), true);
-$ca = "AqHusHSkyokKs7wTY6YxikQ24gomqE5HF96jy9DMpump";
-header('Content-Type: application/json');
-
 // Create Connection DB
 $server_name = "localhost";
 $user_name = "root";
 $password = "";
 $db_name = "bot_trade";
-$connect = mysqli_connect($server_name, $user_name, $password, $db_name);
 
-try {
-    function sendMessage($MadelineProto, $ca) {
-        $chatId = '@solana_trojanbot';
-        global $connect;
-        echo "\n";
+Class Trojan {
+    private static $connect;
+    private $chatId = '@solana_trojanbot';
+    private $allowed_buy = false;
+    private $callback_api = true;
+    private $buy_validation = false;
 
-        $start = $MadelineProto->messages->sendMessage([
-            'peer' => $chatId,
-            'message' => "/start",
-        ]);
+    public function __construct($server_name, $user_name, $password, $db_name) {
+        self::$connect = mysqli_connect($server_name, $user_name, $password, $db_name);
 
-        sleep(1);
+        if (mysqli_connect_errno()) {
+            echo "\nConnection Failed: \n";
+            print_r(self::$connect->connect_error);
+            exit();
+        }
+    }
 
-        $reply = $MadelineProto->messages->getHistory([
-            'peer' => $chatId,
-            'offset_id' => 0,
-            'limit' => 1,
-        ]);
+    public static function getCA() {
+        // $ca = json_decode(file_get_contents('php://input'), true);
+        $ca = "AqHusHSkyokKs7wTY6YxikQ24gomqE5HF96jy9DMpump";
+        header('Content-Type: application/json');
 
-        $message_list = explode("\n", $reply["messages"][0]['message']);
-        $my_address_wallet = explode(" ", $message_list[1])[0];
-        $balance_wallet = str_replace(['(', ')', '$'], '', explode(" ",$message_list[2])[3]);
+        return $ca;
+    }
 
-        $table = "trade_history";
-        $columnsToCheck = ["user_id", "contract_address"];
-        
-        //// FIND TRADER ////
+    public function getUserID() { 
         $find_user_sql = "SELECT * FROM users where id = 1";
-        $result = mysqli_query($connect, $find_user_sql);
+        $result = mysqli_query(self::$connect, $find_user_sql);
         $user_id = null;
         
         if (mysqli_num_rows($result) > 0) {
@@ -77,16 +71,21 @@ try {
                 $user_id = $row["id"];
             }
         }
-        
-        //// FIND EXISTING TRADE ////
-        $sql = "SELECT * FROM $table WHERE $columnsToCheck[0] = ? AND $columnsToCheck[1] = ?";
-        $stmt = $connect->prepare($sql);
+
+        return $user_id;
+    }
+
+    public function checkExistingTrade() {
+        $user_id = $this->getUserID();
+        $ca = $this->getCA();
+
+        $sql = "SELECT * FROM trade_history WHERE user_id = ? AND contract_address = ?";
+        $stmt = self::$connect->prepare($sql);
         $stmt->bind_param("ss", $user_id, $ca);
         $stmt->execute();
         $result = $stmt->get_result();
         
         $buy_count_on_existing_trade = null;
-        $allowed_buy = false;
         $add_buy_count_on_existing_trade = false;
         
         if (!empty($result->num_rows)) {
@@ -96,51 +95,76 @@ try {
                 global $add_buy_count_on_existing_trade;
                 
                 if (empty($result->num_rows)) {
-                    $allowed_buy = true;
+                    $this->allowed_buy = true;
                 } else if ($buy_count_on_existing_trade == 1) {
-                    $allowed_buy = true;
+                    $this->allowed_buy = true;
                     $add_buy_count_on_existing_trade = true;
                 } else {
-                    $allowed_buy = false;
+                    $this->allowed_buy = false;
+                    $this->callback_api = false;
                 }
+            } else {
+                $this->callback_api = false;
             }
         } else {
-            $allowed_buy = true;
+            $this->allowed_buy = true;
         }
 
-        if ($balance_wallet >= 22 && $allowed_buy) {
-            global $add_buy_count_on_existing_trade;
-            global $user_id;
-            global $ca;
+        return [$buy_count_on_existing_trade, $add_buy_count_on_existing_trade, $this->allowed_buy, $this->callback_api];
+    }
 
-            $buy = $MadelineProto->messages->sendMessage([
-                'peer' => $chatId,
+    public function Start($MadelineProto) {
+        $MadelineProto->messages->sendMessage([
+            'peer' => $this->chatId,
+            'message' => "/start",
+        ]);
+
+        sleep(1);
+
+        $start_reply = $MadelineProto->messages->getHistory([
+            'peer' => $this->chatId,
+            'offset_id' => 0,
+            'limit' => 1,
+        ]);
+
+        $message_list = explode("\n", $start_reply["messages"][0]['message']);
+        $my_address_wallet = explode(" ", $message_list[1])[0];
+        $balance_wallet = str_replace(['(', ')', '$'], '', explode(" ",$message_list[2])[3]);
+
+        return [$balance_wallet, $my_address_wallet];
+    }
+
+    public function Buy($balance_wallet, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto) {
+        if ($balance_wallet >= 22 && $allowed_buy && $callback_api) {
+            $user_id = $this->getUserID();
+            $ca = $this->getCA();
+
+            $MadelineProto->messages->sendMessage([
+                'peer' => $this->chatId,
                 'message' => "/buy",
             ]);
 
             sleep(1);
-            
-            $send_buy = $MadelineProto->messages->sendMessage([
-                'peer' => $chatId,
+        
+            $MadelineProto->messages->sendMessage([
+                'peer' => $this->chatId,
                 'message' => $ca,
             ]);
 
             sleep(1);
-            $buy_validation = false;
 
             for ($i = 0; $i < 10; $i++) {
                 sleep(2);
 
-                $reply_buy = $MadelineProto->messages->getHistory([
-                    'peer' => $chatId,
+                $buy_reply = $MadelineProto->messages->getHistory([
+                    'peer' => $this->chatId,
                     'offset_id' => 0,
                 ]);
 
-                $message_response = $reply_buy['messages'][0]['message'];
+                $message_response = $buy_reply['messages'][0]['message'];
                 if (strpos($message_response, 'Buy Success!') !== false) {
                     echo "🟢 Buy Success!\n";
-                    global $buy_validation;
-                    $buy_validation = true;
+                    $this->buy_validation = true;
 
                     //// INSERT NEW TRADE //// 
 
@@ -162,36 +186,16 @@ try {
                     sleep(1);
 
                     // Second Buy
-                    if ($add_buy_count_on_existing_trade) {
-                        $find_trade = "SELECT * FROM trade_history WHERE contract_address = ?";
-                        $stmt = $connect->prepare($find_trade);
-                        $stmt->bind_param("s", $ca);
-                        $stmt->execute();
-                        $result = $stmt->get_result();
-                        $buy_amount_trade_history = $result->fetch_all(MYSQLI_ASSOC)[0]["buy_amount"];
-
-                        if (!empty($result->num_rows)) {
-                            $update_buy_amount = $amount_buy + $buy_amount_trade_history;
-
-                            $buy_count_on_existing_trade = $buy_count_on_existing_trade + 1;
-                            $update_trade_history = "UPDATE trade_history SET buy_count = $buy_count_on_existing_trade, buy_amount = $update_buy_amount WHERE contract_address = ?";
-                            $update_stmt = $connect->prepare($update_trade_history);
-                            $update_stmt->bind_param("s", $ca);
-                            $execute_update = $update_stmt->execute();
-                        
-                            if ($execute_update) {
-                                print_r($update_stmt->error);
-                            }
-
-                            $update_stmt->close();
+                    if ($add_buy_count) {
+                        $buy_second_trade = $this->buySecondTrade($ca, $amount_buy, $buy_count);
+                        if ($buy_second_trade) {
+                            $this->buyValidation($MadelineProto);
                         }
                     } else {
                         // First Buy
-                        $buy_count = 1;
-                        $insert_trade = "INSERT INTO trade_history (user_id, contract_address, buy_amount, buy_count) VALUES ('$user_id', '$ca', '$amount_buy', '$buy_count')";
-    
-                        if (!mysqli_query($connect, $insert_trade)) {
-                            echo "Error: " . $insert_trade . "<br>" . mysqli_error($connect);
+                        $buy_first_trade = $this->buyNewTrade($user_id, $ca, $amount_buy);
+                        if ($buy_first_trade) {
+                            $this->buyValidation($MadelineProto);
                         }
                     }
                 } else {
@@ -201,45 +205,95 @@ try {
             }
 
             sleep(1);
+        } else {
+            if (!$allowed_buy && !$callback_api) {
+                echo "🔴 Already Bought Limit\n";
+            } else {
+                echo !$allowed_buy ? "🔴 Already Bought Limit\n" : "🔴 Insufficient Balance\n";
+            }
+        }
+    }
 
-            if ($buy_validation) {
-                $sell = $MadelineProto->messages->sendMessage([
-                    'peer' => $chatId,
-                    'message' => "/sell",
-                ]);
+    public function buyNewTrade($user_id, $ca, $amount_buy) {
+        $buy_count = 1;
+        $insert_trade = "INSERT INTO trade_history (user_id, contract_address, buy_amount, buy_count) VALUES ('$user_id', '$ca', '$amount_buy', '$buy_count')";
 
-                sleep(1);
+        if (!mysqli_query(self::$connect, $insert_trade)) {
+            echo "Error: " . $insert_trade . "<br>" . mysqli_error(self::$connect);
+        }
 
-                $reply_sell = $MadelineProto->messages->getHistory([
-                    'peer' => $chatId,
-                    'offset_id' => 0,
-                ]);
+        return true;
+    }
 
-                $sell_reply_message = explode("\n", $reply_sell['messages'][0]['message']);
-                $balance_wallet_after_buy = str_replace(['(', ')'], '', $sell_reply_message[1]);
+    public function buySecondTrade($ca, $amount_buy, $buy_count) {
+        $find_trade = "SELECT * FROM trade_history WHERE contract_address = ?";
+        $stmt = self::$connect->prepare($find_trade);
+        $stmt->bind_param("s", $ca);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $buy_amount_trade_history = $result->fetch_all(MYSQLI_ASSOC)[0]["buy_amount"];
 
-                // $balance_wallet = $balance_wallet_after_buy;
-                // $existing_bought_coins = array_slice($sell_reply_message, 2);
+        if (!empty($result->num_rows)) {
+            $update_buy_amount = $amount_buy + $buy_amount_trade_history;
+
+            $buy_count_on_existing_trade = $buy_count + 1;
+            $update_trade_history = "UPDATE trade_history SET buy_count = $buy_count_on_existing_trade, buy_amount = $update_buy_amount WHERE contract_address = ?";
+            $update_stmt = self::$connect->prepare($update_trade_history);
+            $update_stmt->bind_param("s", $ca);
+            $execute_update = $update_stmt->execute();
+        
+            if ($execute_update) {
+                print_r($update_stmt->error);
             }
 
-        } else {
-            echo !$allowed_buy ? "🔴 Already Bought\n" : "🔴 Balance Low\n";
+            $update_stmt->close();
+
+            return true;
         }
     }
 
-    if (isset($ca)) {
-        $check_existsing_ca = [];
+    public function buyValidation($MadelineProto) {
+        if ($this->buy_validation) {
+            $MadelineProto->messages->sendMessage([
+                'peer' => $this->chatId,
+                'message' => "/sell",
+            ]);
 
-        if (!in_array($ca, $check_existsing_ca)) {
-            array_push($check_existsing_ca, $ca);
-            sendMessage($MadelineProto, $ca);
-        } else {
-            echo "🔴 PHP: CA already execute !";
+            sleep(1);
+
+            $sell_reply = $MadelineProto->messages->getHistory([
+                'peer' => $this->chatId,
+                'offset_id' => 0,
+            ]);
+
+            $sell_reply_message = explode("\n", $sell_reply['messages'][0]['message']);
+            $balance_wallet_after_buy = str_replace(['(', ')'], '', $sell_reply_message[1]);
+
+            // $balance_wallet = $balance_wallet_after_buy;
+            // $existing_bought_coins = array_slice($sell_reply_message, 2);
         }
-    } else {
-        echo "🔴 PHP: CA has a problem";
     }
-
-} catch (Exception $e) {
-    echo 'Error: ' . $e->getMessage();
 }
+
+$ca = Trojan::getCA();
+
+if (isset($ca)) {
+    echo "\n";
+    $trojan = new Trojan($server_name, $user_name, $password, $db_name);
+    $user_id = $trojan->getUserID();
+    list($buy_count, $add_buy_count, $allowed_buy, $callback_api) = $trojan->checkExistingTrade();
+
+    if ($allowed_buy) {
+        list($balance, $address_wallet) = $trojan->Start($MadelineProto);
+        $check_buy_result = $trojan->Buy($balance, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto);
+    } else {
+        if (!$allowed_buy && !$callback_api) {
+            echo "🔴 Already Bought Limit\n";
+        } else {
+            echo "🔴 Insufficient Balance\n";
+        }
+    }
+} else {
+    echo "🔴 PHP: CA has a problem";
+}
+
