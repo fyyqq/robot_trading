@@ -1,8 +1,7 @@
 <?php
 
 // PROBLEM NEED TO SOLVE
-// 1) JS CA already execute for 2 times buy
-// 2) Buy 2 times even not sell yet
+// 1) Buy 2 times even not sell yet (different time)
 
 // php -S localhost:8000
 
@@ -20,20 +19,23 @@ require './vendor/autoload.php';
 
 date_default_timezone_set('Asia/Singapore'); // GMT+8
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 $settings = new Settings();
 
 $settings->setAppInfo((new AppInfo)
-->setApiId(24654333)
-->setApiHash("6e49582d42bdeee87199ef227170a746"));
+->setApiId($_ENV['TELEGRAM_API_ID'])
+->setApiHash($_ENV['TELEGRAM_API_HASH']));
 
 $MadelineProto = new API('session.madeline', $settings);
 $MadelineProto->start();
 
 // Create Connection DB
-$server_name = "localhost";
-$user_name = "root";
-$password = "";
-$db_name = "bot_trade";
+$server_name = $_ENV["DB_SERVER_NAME"];
+$user_name = $_ENV["DB_USER_NAME"];
+$password = $_ENV["DB_PASSWORD"];
+$db_name = $_ENV["DB_NAME"];
 
 Class Trojan {
     private static $connect;
@@ -54,7 +56,7 @@ Class Trojan {
 
     public static function getCA() {
         // $ca = json_decode(file_get_contents('php://input'), true);
-        $ca = "AqHusHSkyokKs7wTY6YxikQ24gomqE5HF96jy9DMpump";
+        $ca = "7Wwc9zTimb3aGottnAte8LkGUpV8sv3xcnLnN4Espump";
         header('Content-Type: application/json');
 
         return $ca;
@@ -209,7 +211,7 @@ Class Trojan {
             if (!$allowed_buy && !$callback_api) {
                 echo "🔴 Already Bought Limit\n";
             } else {
-                echo !$allowed_buy ? "🔴 Already Bought Limit\n" : "🔴 Insufficient Balance\n";
+                echo "🔴 Insufficient Balance\n";
             }
         }
     }

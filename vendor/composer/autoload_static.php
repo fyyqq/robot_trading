@@ -24,12 +24,12 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         '40522f9f0eb7d4f191114e944ee6d064' => __DIR__ . '/..' . '/amphp/http/src/Internal/constants.php',
         'db2f6d3e039789c7acd0e5d1d5a42077' => __DIR__ . '/..' . '/amphp/http-client/src/functions.php',
         '77e5a577434e31d19d8dd6aeceac1ff4' => __DIR__ . '/..' . '/amphp/http-client/src/Internal/functions.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '73cfe662a9f753fb79cdfcb7b4206d43' => __DIR__ . '/..' . '/amphp/mysql/src/functions.php',
         '4da7a33b8388a4c58699a4f48894fced' => __DIR__ . '/..' . '/amphp/postgres/src/functions.php',
         '33e77b43ad8185a87488d9c8e2900fb0' => __DIR__ . '/..' . '/amphp/postgres/src/Internal/functions.php',
         '792db3860ad68f8c7b522ed67947a5eb' => __DIR__ . '/..' . '/amphp/redis/src/functions.php',
         '6a333119f7ba58386c4385af1d708a0a' => __DIR__ . '/..' . '/amphp/redis/src/Internal/functions.php',
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '5d92623b88cbe7c988a6aca6fa79ebce' => __DIR__ . '/..' . '/amphp/parallel/src/Context/functions.php',
         'c20d640a0b06382af5bbe7e0c7475adf' => __DIR__ . '/..' . '/amphp/parallel/src/Context/Internal/functions.php',
         '42a785d14bae29c606457755ffd1653b' => __DIR__ . '/..' . '/amphp/parallel/src/Ipc/functions.php',
@@ -43,6 +43,8 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         '4be4fbd9f5a89207b1fd1c85ae339dd7' => __DIR__ . '/..' . '/amphp/websocket-client/src/functions.php',
         '2b4b72fd9056e8b7ab3f418bbf68fc53' => __DIR__ . '/..' . '/danog/ipc/lib/functions.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         'cad60ee4f0892badc28f3feef7cce08d' => __DIR__ . '/..' . '/danog/madelineproto/src/polyfill.php',
     );
 
@@ -68,7 +70,9 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Polyfill\\Ctype\\' => 23,
         ),
         'R' => 
         array (
@@ -80,6 +84,7 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
             'Psr\\Http\\Message\\' => 17,
             'Prometheus\\' => 11,
             'PhpParser\\' => 10,
+            'PhpOption\\' => 10,
             'ParagonIE\\ConstantTime\\' => 23,
         ),
         'M' => 
@@ -95,8 +100,13 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         array (
             'Kelunik\\Certificate\\' => 20,
         ),
+        'G' => 
+        array (
+            'GrahamCampbell\\ResultType\\' => 26,
+        ),
         'D' => 
         array (
+            'Dotenv\\' => 7,
             'DASPRiD\\Enum\\' => 13,
         ),
         'B' => 
@@ -175,9 +185,17 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         array (
             0 => __DIR__ . '/..' . '/webmozart/assert/src',
         ),
+        'Symfony\\Polyfill\\Php80\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Polyfill\\Ctype\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
         'Revolt\\' => 
         array (
@@ -189,8 +207,8 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Prometheus\\' => 
         array (
@@ -199,6 +217,10 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'PhpOption\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption',
         ),
         'ParagonIE\\ConstantTime\\' => 
         array (
@@ -214,13 +236,21 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
         ),
         'League\\Uri\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/uri-interfaces',
-            1 => __DIR__ . '/..' . '/league/uri',
-            2 => __DIR__ . '/..' . '/league/uri-components',
+            0 => __DIR__ . '/..' . '/league/uri',
+            1 => __DIR__ . '/..' . '/league/uri-components',
+            2 => __DIR__ . '/..' . '/league/uri-interfaces',
         ),
         'Kelunik\\Certificate\\' => 
         array (
             0 => __DIR__ . '/..' . '/kelunik/certificate/src',
+        ),
+        'GrahamCampbell\\ResultType\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/graham-campbell/result-type/src',
+        ),
+        'Dotenv\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/vlucas/phpdotenv/src',
         ),
         'DASPRiD\\Enum\\' => 
         array (
@@ -348,7 +378,12 @@ class ComposerStaticInita3a65410ffec51edb40a0d5ca9263a2d
     );
 
     public static $classMap = array (
+        'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
+        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
+        'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
+        'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

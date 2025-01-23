@@ -17,17 +17,19 @@ require './vendor/autoload.php';
 
 date_default_timezone_set('Asia/Singapore'); // GMT+8
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 $settings = new Settings();
 
 $settings->setAppInfo((new AppInfo)
-->setApiId(24654333)
-->setApiHash("6e49582d42bdeee87199ef227170a746"));
+->setApiId($_ENV['TELEGRAM_API_ID'])
+->setApiHash($_ENV['TELEGRAM_API_HASH']));
 
 $MadelineProto = new API('session.madeline', $settings);
 $MadelineProto->start();
 
-// $groupId = '@pumpdotfunalert';
-$groupId = "-1002439194635"; // Meow Private Channel
+$groupId = $_ENV["TELEGRAM_GROUP_ID"]; // Meow Private Channel
 // $topicId = '10';
 
 try {
