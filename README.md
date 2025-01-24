@@ -3,6 +3,9 @@
 ## Overview
 Automated trading bot using MadelineProto and Telegram API for crypto trading signals extraction and execution.
 
+## Project Planning
+https://www.canva.com/design/DAGdBYSUszU/jJOPyBueIK11MTq-PZMwbA/view?utm_content=DAGdBYSUszU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h7f65f524b1
+
 ## Features
 - Real-time message monitoring in Telegram signal groups
 - Automatic contract address (CA) detection
