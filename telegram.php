@@ -42,7 +42,7 @@ try {
             'peer' => $groupId,
             // 'filter' => ['topic_id' => $topicId],
             'offset_id' => 0,
-            'limit' => 100,
+            'limit' => 20,
         ]);
         
         if (!empty($messages['messages'])) {
