@@ -124,7 +124,6 @@
                 const contract_address = CA.ca;
                 const check_latest_post = CA.latest_post;
                 const check_duplicate_latest_post = CA.duplicate_latest_post;
-                api_called_count += 1;
                 
                 fetch('http://localhost:8000/trojan.php', {
                     method: "POST",
@@ -136,6 +135,7 @@
                 .then(response => response.text())
                 .then(data => {
                     console.log(data.split('\n')[data.split('\n').length - 1].trim());
+                    api_called_count += 1;
                     console.log(`API CALLED: ${api_called_count}`);
                 }).catch(err => console.error(err));
             }

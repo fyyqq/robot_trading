@@ -35,7 +35,7 @@ $groupId = $_ENV["TELEGRAM_GROUP_ID"]; // Meow Private Channel
 try {
     // $result = $MadelineProto->channels->joinChannel(['channel' => $groupId]);
 
-    function getGroupMessages($groupId, $limit = 20) {
+    function getGroupMessages($groupId, $limit = 10) {
         global $MadelineProto;
 
         $messages = $MadelineProto->messages->getHistory([
