@@ -61,19 +61,17 @@
         <script type="module" src="./jupiter.js"></script>
         <script>
 
-            let interval_ID = null;
-            let api_paused = false;
+            // let interval_ID = null;
+            // let api_paused = false;
 
             function fetchLatestMessage() {
-                if (api_paused) return;
+                // if (api_paused) return;
 
                 fetch('http://localhost:8000/telegram.php')
                 .then(response => response.text())
                 .then(data => {
-                    if (!api_paused) {
-                        const contract_address = regexPost(data);
-                        trojanManagement(contract_address);
-                    }
+                    const contract_address = regexPost(data);
+                    trojanManagement(contract_address);
                 }).catch(err => console.error(err));
             }
 
@@ -88,35 +86,37 @@
                 };
             }
 
-            function startRealTimeData(element) {
-                const pause_btn = $(element).siblings('#pause_btn');
-                
-                if ($(pause_btn).hasClass('d-none')) {
-                    $(pause_btn).removeClass('d-none');
-                    $(element).addClass('d-none');
+            setInterval(fetchLatestMessage, 1500);
 
-                    api_paused = false;
-                    interval_ID = setInterval(fetchLatestMessage, 1000);
+            // function startRealTimeData(element) {
+            //     const pause_btn = $(element).siblings('#pause_btn');
+                
+            //     if ($(pause_btn).hasClass('d-none')) {
+            //         $(pause_btn).removeClass('d-none');
+            //         $(element).addClass('d-none');
+
+            //         api_paused = false;
+            //         interval_ID = setInterval(fetchLatestMessage, 1000);
                     
-                    console.log("Real Time Data: 🟢");
-                }
-            }
+            //         console.log("Real Time Data: 🟢");
+            //     }
+            // }
             
-            function pauseRealTimeData(element) {
-                const play_btn = $(element).siblings('#play_btn');
+            // function pauseRealTimeData(element) {
+            //     const play_btn = $(element).siblings('#play_btn');
                 
-                if ($(play_btn).hasClass('d-none')) {
-                    api_paused = true;
-                    $(play_btn).removeClass('d-none');
-                    $(element).addClass('d-none');
+            //     if ($(play_btn).hasClass('d-none')) {
+            //         api_paused = true;
+            //         $(play_btn).removeClass('d-none');
+            //         $(element).addClass('d-none');
 
-                    api_paused = true;
-                    clearInterval(interval_ID);
-                    interval_ID = null;
+            //         api_paused = true;
+            //         clearInterval(interval_ID);
+            //         interval_ID = null;
                     
-                    console.log("Real Time Data: 🔴");
-                }
-            }
+            //         console.log("Real Time Data: 🔴");
+            //     }
+            // }
 
             let api_called_count = 0;
 
@@ -134,7 +134,9 @@
                 })
                 .then(response => response.text())
                 .then(data => {
-                    console.log(data.split('\n')[data.split('\n').length - 1].trim());
+                    console.log(data);
+                    
+                    // console.log(data.split('\n')[data.split('\n').length - 1].trim());
                     api_called_count += 1;
                     console.log(`API CALLED: ${api_called_count}`);
                 }).catch(err => console.error(err));

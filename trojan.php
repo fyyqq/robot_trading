@@ -127,7 +127,7 @@ Class Trojan {
             'message' => "/start",
         ]);
 
-        sleep(1);
+        usleep(500000);
 
         $start_reply = $MadelineProto->messages->getHistory([
             'peer' => $this->chatId,
@@ -154,14 +154,14 @@ Class Trojan {
                 'message' => "/buy",
             ]);
 
-            sleep(1);
+            usleep(500000);
         
             $MadelineProto->messages->sendMessage([
                 'peer' => $this->chatId,
                 'message' => $ca_information->ca,
             ]);
 
-            sleep(1);
+            sleep(5);
 
             for ($i = 0; $i < 10; $i++) {
                 sleep(2);
@@ -192,9 +192,8 @@ Class Trojan {
                     }
 
                     echo "\nAmount: $amount_buy\n";
-
-                    sleep(1);
-
+                    sleep(2);
+                    
                     // Second Buy
                     if ($add_buy_count) {
                         $buy_second_trade = $this->buySecondTrade($ca_information->ca, $amount_buy, $buy_count);
@@ -213,8 +212,6 @@ Class Trojan {
                 }
                 break;
             }
-
-            sleep(1);
         } else {
             if (!$allowed_buy && !$callback_api) {
                 echo "🔴 Already Bought Limit\n";
