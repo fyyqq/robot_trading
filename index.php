@@ -15,13 +15,6 @@
         text {
             display: none;
         }
-        .navbar {
-            background-color: #fff;
-        }
-        #query_container {
-            height: 150px;
-            position: relative;
-        }
         .custom-loader {
             position: absolute;
             top: 35%;
@@ -52,31 +45,14 @@
         }
     </style>
     <body>
-        <nav class="navbar navbar-light bg-light shadow-sm p-3">
-            <div class="container-sm">
-                <span class="navbar-brand mb-0 h1">Navbar</span>
-            </div>
-        </nav>
-        <div class="container-sm my-5">
-            <h1>Memecoin Robot Trading</h1>
-            <div class="row mt-4">
-                <div class="border col-6" style="height: max-content;">
-                    <div class="border-bottom p-3 d-flex align-items-center justify-content-between">
-                        <p class="mb-0 fw-bold">Latest Coin</p>
-                        <button class="btn btn-sm btn-danger d-none" id="pause_btn" onclick="pauseRealTimeData(this);">
-                            <i class="bi bi-pause-fill" style="font-size: 15px;"></i>
-                        </button>
-                        <button class="btn btn-sm btn-success" id="play_btn" onclick="startRealTimeData(this);">
-                            <i class="bi bi-play-fill" style="font-size: 15px;"></i>
-                        </button>
-                    </div>
-                    <div id="query_container" class="p-4">
-                        <div class="custom-loader"></div>
-                    </div>
-                </div>
-                <div class="col-6" style="height: max-content;">
-                    <div class="border w-100" id="integrated-terminal" style="width: 400px; height: 568px;"></div>
-                </div>
+        <div class="container-sm position-relative" style="height: 100vh;">
+            <div class="d-flex align-items-center justify-content-between position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                <button class="btn btn-sm btn-danger d-none" id="pause_btn" onclick="pauseRealTimeData(this);">
+                    <i class="bi bi-pause-fill" style="font-size: 15px;"></i>
+                </button>
+                <button class="btn btn-sm btn-success" id="play_btn" onclick="startRealTimeData(this);">
+                    <i class="bi bi-play-fill" style="font-size: 15px;"></i>
+                </button>
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
@@ -86,19 +62,30 @@
         <script>
 
             let interval_ID = null;
+            let api_paused = false;
 
             function fetchLatestMessage() {
+                if (api_paused) return;
+
                 fetch('http://localhost:8000/telegram.php')
                 .then(response => response.text())
                 .then(data => {
-                    const contract_address = regexPost(data);
-                    trojanManagement(contract_address)
+                    if (!api_paused) {
+                        const contract_address = regexPost(data);
+                        trojanManagement(contract_address);
+                    }
                 }).catch(err => console.error(err));
             }
 
             function regexPost(data) {
                 const contract_address = data.split('\n')[data.split('\n').length - 1].trim();
-                return {data: contract_address};
+                const split_ca = contract_address.split(',');
+
+                return {
+                    "ca": split_ca[0],
+                    "latest_post": split_ca[1],
+                    "duplicate_latest_post": split_ca[2],
+                };
             }
 
             function startRealTimeData(element) {
@@ -107,7 +94,10 @@
                 if ($(pause_btn).hasClass('d-none')) {
                     $(pause_btn).removeClass('d-none');
                     $(element).addClass('d-none');
+
+                    api_paused = false;
                     interval_ID = setInterval(fetchLatestMessage, 1000);
+                    
                     console.log("Real Time Data: 🟢");
                 }
             }
@@ -116,30 +106,37 @@
                 const play_btn = $(element).siblings('#play_btn');
                 
                 if ($(play_btn).hasClass('d-none')) {
+                    api_paused = true;
                     $(play_btn).removeClass('d-none');
                     $(element).addClass('d-none');
-                    console.log("Real Time Data: 🔴");
 
-                    if (interval_ID !== null) {
-                        clearInterval(interval_ID);
-                        interval_ID = null;
-                    }
+                    api_paused = true;
+                    clearInterval(interval_ID);
+                    interval_ID = null;
+                    
+                    console.log("Real Time Data: 🔴");
                 }
             }
 
+            let api_called_count = 0;
+
             function trojanManagement(CA) {
-                const contract_address = CA.data;
+                const contract_address = CA.ca;
+                const check_latest_post = CA.latest_post;
+                const check_duplicate_latest_post = CA.duplicate_latest_post;
+                api_called_count += 1;
                 
                 fetch('http://localhost:8000/trojan.php', {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(contract_address),
+                    body: JSON.stringify({contract_address, check_latest_post, check_duplicate_latest_post}),
                 })
                 .then(response => response.text())
                 .then(data => {
                     console.log(`${data}\n`);
+                    console.log(`API CALLED: ${api_called_count}`);
                 }).catch(err => console.error(err));
             }
 

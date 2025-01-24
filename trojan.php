@@ -2,6 +2,7 @@
 
 // PROBLEM NEED TO SOLVE
 // 1) Buy 2 times even not sell yet (different time)
+// 2) Solve = need to check if have post after first ca than same ca appear
 
 // php -S localhost:8000
 
@@ -55,11 +56,16 @@ Class Trojan {
     }
 
     public static function getCA() {
-        // $ca = json_decode(file_get_contents('php://input'), true);
-        $ca = "7Wwc9zTimb3aGottnAte8LkGUpV8sv3xcnLnN4Espump";
+        $ca = json_decode(file_get_contents('php://input'), true);
+        // $ca = "7Wwc9zTimb3aGottnAte8LkGUpV8sv3xcnLnN4Espump";
         header('Content-Type: application/json');
 
-        return $ca;
+        $result = new stdClass();
+        $result->ca = $ca['contract_address'];
+        $result->latest_post_not_ca = filter_var($ca["check_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = latest post have CA | false = latest post don't have CA
+        $result->check_duplicate_latest_post = filter_var($ca["check_duplicate_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = duplicate CA on 2 latest post | false = allowed to buy
+
+        return $result;
     }
 
     public function getUserID() { 
@@ -79,11 +85,11 @@ Class Trojan {
 
     public function checkExistingTrade() {
         $user_id = $this->getUserID();
-        $ca = $this->getCA();
+        $ca_information = $this->getCA();
 
         $sql = "SELECT * FROM trade_history WHERE user_id = ? AND contract_address = ?";
         $stmt = self::$connect->prepare($sql);
-        $stmt->bind_param("ss", $user_id, $ca);
+        $stmt->bind_param("ss", $user_id, $ca_information->ca);
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -137,9 +143,11 @@ Class Trojan {
     }
 
     public function Buy($balance_wallet, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto) {
+        $ca_information = $this->getCA();
+
         if ($balance_wallet >= 22 && $allowed_buy && $callback_api) {
+            // global $ca_information;
             $user_id = $this->getUserID();
-            $ca = $this->getCA();
 
             $MadelineProto->messages->sendMessage([
                 'peer' => $this->chatId,
@@ -150,7 +158,7 @@ Class Trojan {
         
             $MadelineProto->messages->sendMessage([
                 'peer' => $this->chatId,
-                'message' => $ca,
+                'message' => $ca_information->ca,
             ]);
 
             sleep(1);
@@ -189,13 +197,13 @@ Class Trojan {
 
                     // Second Buy
                     if ($add_buy_count) {
-                        $buy_second_trade = $this->buySecondTrade($ca, $amount_buy, $buy_count);
+                        $buy_second_trade = $this->buySecondTrade($ca_information->ca, $amount_buy, $buy_count);
                         if ($buy_second_trade) {
                             $this->buyValidation($MadelineProto);
                         }
                     } else {
                         // First Buy
-                        $buy_first_trade = $this->buyNewTrade($user_id, $ca, $amount_buy);
+                        $buy_first_trade = $this->buyNewTrade($user_id, $ca_information->ca, $amount_buy);
                         if ($buy_first_trade) {
                             $this->buyValidation($MadelineProto);
                         }
@@ -237,9 +245,10 @@ Class Trojan {
 
         if (!empty($result->num_rows)) {
             $update_buy_amount = $amount_buy + $buy_amount_trade_history;
+            $current_time_for_second_buy = date('Y-m-d H:i:s');
 
             $buy_count_on_existing_trade = $buy_count + 1;
-            $update_trade_history = "UPDATE trade_history SET buy_count = $buy_count_on_existing_trade, buy_amount = $update_buy_amount WHERE contract_address = ?";
+            $update_trade_history = "UPDATE trade_history SET buy_count = $buy_count_on_existing_trade, buy_amount = $update_buy_amount, updated_at = '$current_time_for_second_buy' WHERE contract_address = ?";
             $update_stmt = self::$connect->prepare($update_trade_history);
             $update_stmt->bind_param("s", $ca);
             $execute_update = $update_stmt->execute();
@@ -279,20 +288,21 @@ Class Trojan {
 
 $ca = Trojan::getCA();
 
-if (isset($ca)) {
+if (isset($ca->ca)) {
     echo "\n";
     $trojan = new Trojan($server_name, $user_name, $password, $db_name);
     $user_id = $trojan->getUserID();
     list($buy_count, $add_buy_count, $allowed_buy, $callback_api) = $trojan->checkExistingTrade();
 
-    if ($allowed_buy) {
+    if ($allowed_buy && !$ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) { // Live Code
+    // if ($allowed_buy) { // Testing Code
         list($balance, $address_wallet) = $trojan->Start($MadelineProto);
         $check_buy_result = $trojan->Buy($balance, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto);
     } else {
         if (!$allowed_buy && !$callback_api) {
             echo "🔴 Already Bought Limit\n";
-        } else {
-            echo "🔴 Insufficient Balance\n";
+        } else if ($ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) {
+            echo "🔴 No Signal Post Yet.";
         }
     }
 } else {

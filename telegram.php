@@ -63,9 +63,16 @@ try {
     }
 
     $latest_post = getGroupMessages($groupId);
-    
     $findCA = [];
+    $latestPostNotCA = true;
 
+    echo "\n";
+    foreach ($latest_post[0]['post'] as $post) {
+        if (strlen($post) == 44 && ctype_alnum($post)) {
+            $latestPostNotCA = false;
+        }
+    }
+    
     foreach ($latest_post as $entries) {
         foreach ($entries['post'] as $entry) {
             if (strlen($entry) == 44 && ctype_alnum($entry)) {
@@ -74,10 +81,24 @@ try {
         }
     }
 
+    function filterCAEntries($array) {
+        return array_filter($array, function($entry) {
+            return strlen($entry) == 44 && ctype_alnum($entry);
+        });
+    }
+
+    $newest_post = $latest_post[0]['post'];
+    $prev_post = $latest_post[1]['post'];
+    
+    $first_ca = filterCAEntries($newest_post);
+    $second_ca = filterCAEntries($prev_post);
+    
+    $result = !empty(array_intersect($first_ca, $second_ca));
+    $notDuplicateLatestPost = $result; // true = duplicate CA | false = allowed to buy
+
     $latestCA = $findCA[0];
-    print_r($latestCA);
-    // echo $latestCA;
+    print_r($latestCA . ',' . $latestPostNotCA . ',' . $notDuplicateLatestPost);
 
 } catch (Exception $e) {
-    echo 'Error: ' . $e->getMessage();
+    echo 'Errors: ' . $e->getMessage();
 }
