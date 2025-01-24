@@ -135,7 +135,7 @@
                 })
                 .then(response => response.text())
                 .then(data => {
-                    console.log(`${data}\n`);
+                    console.log(data.split('\n')[data.split('\n').length - 1].trim());
                     console.log(`API CALLED: ${api_called_count}`);
                 }).catch(err => console.error(err));
             }
