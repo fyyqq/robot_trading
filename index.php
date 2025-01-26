@@ -6,7 +6,6 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <title>Robot Trading</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-        <script src="https://terminal.jup.ag/main-v3.js"></script>
     </head>
     <style>
         body {
@@ -57,12 +56,12 @@
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-        <script src='https://terminal.jup.ag/main-v3.js' data-preload defer></script>
-        <script type="module" src="./jupiter.js"></script>
         <script>
 
-            // let interval_ID = null;
-            // let api_paused = false;
+            let interval_ID = null;
+            let api_paused = false;
+            let telegram_api_called_count = 0;
+            let trojan_api_called_count = 0;
 
             function fetchLatestMessage() {
                 // if (api_paused) return;
@@ -71,60 +70,73 @@
                 .then(response => response.text())
                 .then(data => {
                     const contract_address = regexPost(data);
-                    trojanManagement(contract_address);
-                }).catch(err => console.error(err));
+                    if (!contract_address.latest_post_not_ca) {
+                        trojanManagement(contract_address);
+                        trojan_api_called_count += 1;
+                        console.log(`🟢 API Called: ${trojan_api_called_count}`);
+                    }
+                    console.log(contract_address);
+
+                    telegram_api_called_count += 1;
+                    console.log(`🔵 API Called: ${telegram_api_called_count}`);
+                    
+                }).catch(err => {
+                    console.error(err);
+
+                    clearInterval(interval_ID);
+                    interval_ID = null;
+                    console.log("Real Time Data: 🔴 Stopped due to error.");
+                });
             }
 
             function regexPost(data) {
-                const contract_address = data.split('\n')[data.split('\n').length - 1].trim();
-                const split_ca = contract_address.split(',');
+                const split_ca = data.split('\n')[1].split(',');
 
                 return {
                     "ca": split_ca[0],
-                    "latest_post": split_ca[1],
+                    "latest_post_not_ca": split_ca[1],
                     "duplicate_latest_post": split_ca[2],
                 };
             }
 
-            setInterval(fetchLatestMessage, 1500);
+            // setInterval(fetchLatestMessage, 2000);
 
-            // function startRealTimeData(element) {
-            //     const pause_btn = $(element).siblings('#pause_btn');
+            function startRealTimeData(element) {
+                const pause_btn = $(element).siblings('#pause_btn');
                 
-            //     if ($(pause_btn).hasClass('d-none')) {
-            //         $(pause_btn).removeClass('d-none');
-            //         $(element).addClass('d-none');
+                if ($(pause_btn).hasClass('d-none')) {
+                    $(pause_btn).removeClass('d-none');
+                    $(element).addClass('d-none');
 
-            //         api_paused = false;
-            //         interval_ID = setInterval(fetchLatestMessage, 1000);
+                    api_paused = false;
+                    interval_ID = setInterval(fetchLatestMessage, 2000);
                     
-            //         console.log("Real Time Data: 🟢");
-            //     }
-            // }
+                    console.log("Real Time Data: 🟢");
+                }
+            }
             
-            // function pauseRealTimeData(element) {
-            //     const play_btn = $(element).siblings('#play_btn');
+            function pauseRealTimeData(element) {
+                const play_btn = $(element).siblings('#play_btn');
                 
-            //     if ($(play_btn).hasClass('d-none')) {
-            //         api_paused = true;
-            //         $(play_btn).removeClass('d-none');
-            //         $(element).addClass('d-none');
+                if ($(play_btn).hasClass('d-none')) {
+                    api_paused = true;
+                    $(play_btn).removeClass('d-none');
+                    $(element).addClass('d-none');
 
-            //         api_paused = true;
-            //         clearInterval(interval_ID);
-            //         interval_ID = null;
+                    api_paused = true;
+                    clearInterval(interval_ID);
+                    interval_ID = null;
                     
-            //         console.log("Real Time Data: 🔴");
-            //     }
-            // }
+                    console.log("Real Time Data: 🔴");
+                }
+            }
 
-            let api_called_count = 0;
-
+            
             function trojanManagement(CA) {
                 const contract_address = CA.ca;
-                const check_latest_post = CA.latest_post;
+                const check_latest_post = CA.latest_post_not_ca;
                 const check_duplicate_latest_post = CA.duplicate_latest_post;
-                
+
                 fetch('http://localhost:8000/trojan.php', {
                     method: "POST",
                     headers: {
@@ -137,12 +149,16 @@
                     console.log(data);
                     
                     // console.log(data.split('\n')[data.split('\n').length - 1].trim());
-                    api_called_count += 1;
-                    console.log(`API CALLED: ${api_called_count}`);
-                }).catch(err => console.error(err));
+                }).catch(err => {
+                    console.error(err);
+
+                    clearInterval(interval_ID);
+                    interval_ID = null;
+                    console.log("Real Time Data: 🔴 Stopped due to error.");
+                });
             }
 
             window.addEventListener("DOMContentLoaded", fetchLatestMessage);
-        </script>
+        </script>   
     </body>
 </html>

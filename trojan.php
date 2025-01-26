@@ -60,7 +60,11 @@ Class Trojan {
         // $ca = "7Wwc9zTimb3aGottnAte8LkGUpV8sv3xcnLnN4Espump";
         header('Content-Type: application/json');
 
+        
         $result = new stdClass();
+        // $result->ca = '3d9vSXzJhfD1vUFuJab5oqG1ZXdDsFdY4jQjEBmndcpE';
+        // $result->latest_post_not_ca = false;
+        // $result->check_duplicate_latest_post = true;
         $result->ca = $ca['contract_address'];
         $result->latest_post_not_ca = filter_var($ca["check_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = latest post have CA | false = latest post don't have CA
         $result->check_duplicate_latest_post = filter_var($ca["check_duplicate_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = duplicate CA on 2 latest post | false = allowed to buy
@@ -72,7 +76,7 @@ Class Trojan {
         $find_user_sql = "SELECT * FROM users where id = 1";
         $result = mysqli_query(self::$connect, $find_user_sql);
         $user_id = null;
-        
+
         if (mysqli_num_rows($result) > 0) {
             while ($row = mysqli_fetch_assoc($result)) {
                 global $user_id;
@@ -122,11 +126,13 @@ Class Trojan {
     }
 
     public function Start($MadelineProto) {
+        usleep(500000);
+        
         $MadelineProto->messages->sendMessage([
             'peer' => $this->chatId,
             'message' => "/start",
         ]);
-
+        
         usleep(500000);
 
         $start_reply = $MadelineProto->messages->getHistory([
@@ -148,6 +154,8 @@ Class Trojan {
         if ($balance_wallet >= 22 && $allowed_buy && $callback_api) {
             // global $ca_information;
             $user_id = $this->getUserID();
+
+            usleep(500000);
 
             $MadelineProto->messages->sendMessage([
                 'peer' => $this->chatId,
@@ -291,14 +299,14 @@ if (isset($ca->ca)) {
     $user_id = $trojan->getUserID();
     list($buy_count, $add_buy_count, $allowed_buy, $callback_api) = $trojan->checkExistingTrade();
 
-    if ($allowed_buy && !$ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) { // Live Code
+    if ($allowed_buy && strlen($ca->ca) > 5 && !$ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) { // Live Code
     // if ($allowed_buy) { // Testing Code
         list($balance, $address_wallet) = $trojan->Start($MadelineProto);
         $check_buy_result = $trojan->Buy($balance, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto);
     } else {
         if (!$allowed_buy && !$callback_api) {
             echo "🔴 Already Bought Limit\n";
-        } else if ($ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) {
+        } else if ($ca->latest_post_not_ca && !$ca->check_duplicate_latest_post && strlen($ca->ca) < 5) {
             echo "🔴 No Signal Post Yet.";
         }
     }
