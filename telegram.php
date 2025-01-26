@@ -58,7 +58,6 @@ try {
         
         foreach ($latest_post as $entries) {
             foreach ($entries['post'] as $entry) {
-                // if (strlen($entry) == 44 && ctype_alnum($entry)) {
                 if ((strlen($entry) == 43 || strlen($entry) == 44) && ctype_alnum($entry)) {
                     global $findCA;
                     $findCA[] = $entry;
@@ -75,8 +74,9 @@ try {
         $second_ca = filterCAEntries($latest_post[1]['post'] ?? []);
         $check_duplicate_latest_post = !empty(array_intersect($first_ca, $second_ca));
         $findCA = !empty($findCA[0]) ? $findCA[0] : false;
+        $prevPostCA =  isset($second_ca[0]) ? $second_ca[0] : "";
 
-        print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post);
+        print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post . ',' . $prevPostCA);
     }
 
     function filterCAEntries($array) {
@@ -88,8 +88,10 @@ try {
     getGroupMessagesMeow($groupIdMeow);
     echo "\n\n";
 
-    function getGroupMessagesPumpFunInsider($groupIdPF, $limit = 50) {
+    function getGroupMessagesPumpFunInsider($groupIdPF, $limit = 2) {
         global $MadelineProto;
+
+        sleep(1);
 
         $messages = $MadelineProto->messages->getHistory([
             'peer' => $groupIdPF,
@@ -110,7 +112,6 @@ try {
 
         foreach ($latest_post as $entries) {
             foreach ($entries['post'] as $entry) {
-                // if (strlen($entry) == 44 && ctype_alnum($entry)) {
                 if ((strlen($entry) == 43 || strlen($entry) == 44) && ctype_alnum($entry)) {
                     global $findCA;
                     $findCA[] = $entry;
@@ -126,8 +127,13 @@ try {
         $first_ca = filterCAEntries($latest_post[0]['post'] ?? []);
         $second_ca = filterCAEntries($latest_post[1]['post'] ?? []);
         $check_duplicate_latest_post = !empty(array_intersect($first_ca, $second_ca));
+        $findCA = !empty($findCA[0]) ? $findCA[0] : false;
+        $prevPostCA =  isset($second_ca[0]) ? $second_ca[0] : "";
+        
+        //  latest_post have ca = buy | db buy_count = 1
+        //  check db if buy_count = 1 && prev post haven't same used ca = cancel buy 
 
-        print_r($findCA[0] . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post);
+        print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post . ',' . $prevPostCA);
     }
 
     // getGroupMessagesPumpFunInsider($groupIdPF);

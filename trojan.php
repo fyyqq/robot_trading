@@ -1,8 +1,8 @@
 <?php
 
 // PROBLEM NEED TO SOLVE
-// 1) Buy 2 times even not sell yet (different time)
-// 2) Solve = need to check if have post after first ca than same ca appear
+// 1) Buy 2 times when calling api same ca
+// 2) Solve = ???
 
 // php -S localhost:8000
 
@@ -68,6 +68,7 @@ Class Trojan {
         $result->ca = $ca['contract_address'];
         $result->latest_post_not_ca = filter_var($ca["check_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = latest post have CA | false = latest post don't have CA
         $result->check_duplicate_latest_post = filter_var($ca["check_duplicate_latest_post"], FILTER_VALIDATE_BOOLEAN); // true = duplicate CA on 2 latest post | false = allowed to buy
+        $result->check_prev_post_ca = $ca["check_prev_post_ca"];
 
         return $result;
     }
@@ -99,18 +100,38 @@ Class Trojan {
         
         $buy_count_on_existing_trade = null;
         $add_buy_count_on_existing_trade = false;
+
+        if (strlen($ca_information->check_prev_post_ca) > 5) {
+            $sql = "UPDATE trade_history SET allow_second_buy = 1 WHERE user_id = ? AND contract_address = ?";
+            $stmt = self::$connect->prepare($sql);
+            $stmt->bind_param("ss",$user_id, $ca_information->check_prev_post_ca);
+
+            if ($stmt->execute()) {
+                echo "🟢 Allow Second Buy!";
+            } else {
+                echo "🔴 Error: " . $stmt->error;
+            }
+        }
         
         if (!empty($result->num_rows)) {
-            $buy_count_on_existing_trade = $result->fetch_all(MYSQLI_ASSOC)[0]["buy_count"];
+            $row = $result->fetch_all(MYSQLI_ASSOC)[0];
+            $buy_count_on_existing_trade = $row["buy_count"];
+            $allow_second_buy = $row['allow_second_buy'];
 
             if (empty($result->num_rows) || $buy_count_on_existing_trade == 1) {
                 global $add_buy_count_on_existing_trade;
                 
+                // No Buy Yet.
                 if (empty($result->num_rows)) {
                     $this->allowed_buy = true;
                 } else if ($buy_count_on_existing_trade == 1) {
-                    $this->allowed_buy = true;
-                    $add_buy_count_on_existing_trade = true;
+                    // Already Buy Once.
+                    if ($allow_second_buy) {
+                        $this->allowed_buy = true;
+                        $add_buy_count_on_existing_trade = true;
+                    } else {
+                        $this->allowed_buy = false;
+                    }
                 } else {
                     $this->allowed_buy = false;
                     $this->callback_api = false;
@@ -298,12 +319,13 @@ if (isset($ca->ca)) {
     $trojan = new Trojan($server_name, $user_name, $password, $db_name);
     $user_id = $trojan->getUserID();
     list($buy_count, $add_buy_count, $allowed_buy, $callback_api) = $trojan->checkExistingTrade();
-
+    
     if ($allowed_buy && strlen($ca->ca) > 5 && !$ca->latest_post_not_ca && !$ca->check_duplicate_latest_post) { // Live Code
-    // if ($allowed_buy) { // Testing Code
+        // if ($allowed_buy) { // Testing Code
         list($balance, $address_wallet) = $trojan->Start($MadelineProto);
         $check_buy_result = $trojan->Buy($balance, $allowed_buy, $callback_api, $buy_count, $add_buy_count, $MadelineProto);
     } else {
+        // print_r([$ca->ca, $ca->check_duplicate_latest_post, $ca->latest_post_not_ca]);
         if (!$allowed_buy && !$callback_api) {
             echo "🔴 Already Bought Limit\n";
         } else if ($ca->latest_post_not_ca && !$ca->check_duplicate_latest_post && strlen($ca->ca) < 5) {

@@ -70,15 +70,15 @@
                 .then(response => response.text())
                 .then(data => {
                     const contract_address = regexPost(data);
+
+                    telegram_api_called_count += 1;
+                    console.log(`🔵 API Called: ${telegram_api_called_count}`);
+                    
                     if (!contract_address.latest_post_not_ca) {
                         trojanManagement(contract_address);
                         trojan_api_called_count += 1;
                         console.log(`🟢 API Called: ${trojan_api_called_count}`);
                     }
-                    console.log(contract_address);
-
-                    telegram_api_called_count += 1;
-                    console.log(`🔵 API Called: ${telegram_api_called_count}`);
                     
                 }).catch(err => {
                     console.error(err);
@@ -90,12 +90,14 @@
             }
 
             function regexPost(data) {
-                const split_ca = data.split('\n')[1].split(',');
+                let split_ca = data.split('\n').filter(item => item.trim() !== '');
+                split_ca = split_ca[split_ca.length - 1].split(',');
 
                 return {
                     "ca": split_ca[0],
                     "latest_post_not_ca": split_ca[1],
                     "duplicate_latest_post": split_ca[2],
+                    "prev_post_ca": split_ca[3],
                 };
             }
 
@@ -136,13 +138,14 @@
                 const contract_address = CA.ca;
                 const check_latest_post = CA.latest_post_not_ca;
                 const check_duplicate_latest_post = CA.duplicate_latest_post;
+                const check_prev_post_ca = CA.prev_post_ca;
 
                 fetch('http://localhost:8000/trojan.php', {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({contract_address, check_latest_post, check_duplicate_latest_post}),
+                    body: JSON.stringify({contract_address, check_latest_post, check_duplicate_latest_post, check_prev_post_ca}),
                 })
                 .then(response => response.text())
                 .then(data => {
