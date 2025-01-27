@@ -107,16 +107,24 @@ Class Trojan {
             $stmt->bind_param("ss",$user_id, $ca_information->check_prev_post_ca);
 
             if ($stmt->execute()) {
-                echo "🟢 Allow Second Buy!";
+                $success_message = "🟢 Allow Second Buy!";
+                $this->writeToLog('Response: ' . $success_message, 'success');
             } else {
-                echo "🔴 Error: " . $stmt->error;
+                $error_message = "🔴 Error: " . $stmt->error;
+                $this->writeToLog('Response: ' . $error_message, 'error');
             }
         }
+
+        $sql = "SELECT * FROM trade_history WHERE user_id = ? AND contract_address = ?";
+        $stmt = self::$connect->prepare($sql);
+        $stmt->bind_param("ss", $user_id, $ca_information->check_prev_post_ca);
+        $stmt->execute();
+        $result_for_allow_second_buy = $stmt->get_result();
         
         if (!empty($result->num_rows)) {
             $row = $result->fetch_all(MYSQLI_ASSOC)[0];
             $buy_count_on_existing_trade = $row["buy_count"];
-            $allow_second_buy = $row['allow_second_buy'];
+            $allow_second_buy = $result_for_allow_second_buy->fetch_all(MYSQLI_ASSOC)[0]['allow_second_buy'];
 
             if (empty($result->num_rows) || $buy_count_on_existing_trade == 1) {
                 global $add_buy_count_on_existing_trade;
@@ -202,7 +210,8 @@ Class Trojan {
 
                 $message_response = $buy_reply['messages'][0]['message'];
                 if (strpos($message_response, 'Buy Success!') !== false) {
-                    echo "🟢 Buy Success!\n";
+                    $success_message = "🟢 Buy Success!\n";
+                    $this->writeToLog('Response: ' . $success_message, 'success');
                     $this->buy_validation = true;
 
                     //// INSERT NEW TRADE //// 
@@ -220,7 +229,8 @@ Class Trojan {
                         $amount_buy = str_replace(['(', ')', '$'], '', $result);
                     }
 
-                    echo "\nAmount: $amount_buy\n";
+                    $success_message = "\nAmount: $amount_buy\n";
+                    $this->writeToLog('Response: ' . $success_message, 'success');
                     sleep(2);
                     
                     // Second Buy
@@ -237,15 +247,18 @@ Class Trojan {
                         }
                     }
                 } else {
-                    echo "🔴 Buy Failed!.\n";
+                    $error_message = "🔴 Buy Failed!.\n";
+                    $this->writeToLog('Response: ' . $error_message, 'error');
                 }
                 break;
             }
         } else {
             if (!$allowed_buy && !$callback_api) {
-                echo "🔴 Already Bought Limit\n";
+                $error_message = "🔴 Already Bought Limit\n";
+                $this->writeToLog('Response: ' . $error_message, 'error');
             } else {
-                echo "🔴 Insufficient Balance\n";
+                $error_message =  "🔴 Insufficient Balance\n";
+                $this->writeToLog('Response: ' . $error_message, 'error');
             }
         }
     }
@@ -310,6 +323,14 @@ Class Trojan {
             // $existing_bought_coins = array_slice($sell_reply_message, 2);
         }
     }
+
+    public function writeToLog($message, $type = 'info') {
+        $logFile = './log/message.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $logEntry = "[{$timestamp}] [{$type}] {$message}" . PHP_EOL;
+        
+        file_put_contents($logFile, $logEntry, FILE_APPEND);
+    }
 }
 
 $ca = Trojan::getCA();
@@ -327,9 +348,11 @@ if (isset($ca->ca)) {
     } else {
         // print_r([$ca->ca, $ca->check_duplicate_latest_post, $ca->latest_post_not_ca]);
         if (!$allowed_buy && !$callback_api) {
-            echo "🔴 Already Bought Limit\n";
+            $error_message = "🔴 Already Bought Limit\n";
+            $this->writeToLog('Response: ' . $error_message, 'success');
         } else if ($ca->latest_post_not_ca && !$ca->check_duplicate_latest_post && strlen($ca->ca) < 5) {
-            echo "🔴 No Signal Post Yet.";
+            $error_message = "🔴 No Signal Post Yet.";
+            $this->writeToLog('Response: ' . $error_message, 'success');
         }
     }
 } else {

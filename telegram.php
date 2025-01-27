@@ -34,7 +34,7 @@ $groupIdPF = $_ENV["TELEGRAM_GROUP_ID_PFINSIDER"]; // pumpfun insiders
 // $topicId = '10';
 
 try {
-    function getGroupMessagesMeow($groupIdMeow, $limit = 50) {
+    function getGroupMessagesMeow($groupIdMeow, $limit = 2) {
         global $MadelineProto;
 
         sleep(1);
@@ -76,7 +76,7 @@ try {
         $findCA = !empty($findCA[0]) ? $findCA[0] : false;
         $prevPostCA =  isset($second_ca[0]) ? $second_ca[0] : "";
 
-        print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post . ',' . $prevPostCA);
+        // print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post . ',' . $prevPostCA);
     }
 
     function filterCAEntries($array) {
@@ -88,7 +88,7 @@ try {
     getGroupMessagesMeow($groupIdMeow);
     echo "\n\n";
 
-    function getGroupMessagesPumpFunInsider($groupIdPF, $limit = 2) {
+    function getGroupMessagesPumpFunInsider($groupIdPF, $limit = 10) {
         global $MadelineProto;
 
         sleep(1);
@@ -133,10 +133,11 @@ try {
         //  latest_post have ca = buy | db buy_count = 1
         //  check db if buy_count = 1 && prev post haven't same used ca = cancel buy 
 
+        print_r($latest_post);
         print_r($findCA . ',' . $latestPostNotCA . ',' . $check_duplicate_latest_post . ',' . $prevPostCA);
     }
 
-    // getGroupMessagesPumpFunInsider($groupIdPF);
+    getGroupMessagesPumpFunInsider($groupIdPF);
 
 } catch (Exception $e) {
     echo 'Errors: ' . $e->getMessage();

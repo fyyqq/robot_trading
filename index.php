@@ -73,6 +73,7 @@
 
                     telegram_api_called_count += 1;
                     console.log(`🔵 API Called: ${telegram_api_called_count}`);
+                    console.log(contract_address);
                     
                     if (!contract_address.latest_post_not_ca) {
                         trojanManagement(contract_address);
